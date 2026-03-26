@@ -1,6 +1,8 @@
 const Contact = require("../models/Contact");
-const nodemailer = require("nodemailer");
 const validator = require("validator");
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.submitContact = async (req, res) => {
   try {
@@ -36,88 +38,72 @@ exports.submitContact = async (req, res) => {
     // ================= SAVE TO DB =================
     await Contact.create({ name, email, phone, message });
 
-    // ================= DEBUG =================
-    // console.log("EMAIL_USER:", process.env.EMAIL_USER);
-    // console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Missing");
-
-    // ================= EMAIL SETUP =================
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, // IMPORTANT (SSL)
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    // ✅ VERIFY SMTP (IMPORTANT)
-    await transporter.verify();
-    console.log("✅ SMTP Connected");
-
-    // ================= SEND EMAIL =================
-    await transporter.sendMail({
-      from: `"SocialLift" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+    // ================= SEND EMAIL TO YOU =================
+    await resend.emails.send({
+      from: "SocialLift <onboarding@resend.dev>", // default sender
+      to: process.env.EMAIL_USER, // your email
       subject: "📩 New Contact Form Submission",
       html: `
-  <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">
-    <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; border:1px solid #eee;">
-      
-      <h2 style="color:#3B82F6; margin-bottom:20px;">New Contact Submission</h2>
-      
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Phone:</strong> ${phone}</p>
-      
-      <div style="margin-top:20px; padding:15px; background:#f1f5f9; border-radius:8px;">
-        <p style="margin:0;"><strong>Message:</strong></p>
-        <p style="margin-top:10px;">${message}</p>
-      </div>
+        <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">
+          <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; border:1px solid #eee;">
+            
+            <h2 style="color:#3B82F6; margin-bottom:20px;">New Contact Submission</h2>
+            
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Phone:</strong> ${phone}</p>
+            
+            <div style="margin-top:20px; padding:15px; background:#f1f5f9; border-radius:8px;">
+              <p style="margin:0;"><strong>Message:</strong></p>
+              <p style="margin-top:10px;">${message}</p>
+            </div>
 
-      <hr style="margin:30px 0; border:none; border-top:1px solid #eee;" />
+            <hr style="margin:30px 0; border:none; border-top:1px solid #eee;" />
 
-      <p style="font-size:12px; color:#888;">
-        This message was sent from your SocialLift website contact form.
-      </p>
+            <p style="font-size:12px; color:#888;">
+              This message was sent from your SocialLift website contact form.
+            </p>
 
-    </div>
-  </div>
-  `,
+          </div>
+        </div>
+      `,
     });
-    await transporter.sendMail({
-      from: `"SocialLift" <${process.env.EMAIL_USER}>`,
+
+    // ================= AUTO REPLY TO USER =================
+    await resend.emails.send({
+      from: "SocialLift <onboarding@resend.dev>",
       to: email,
       subject: "We received your message - SocialLift",
       html: `
-  <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">
-    <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; border:1px solid #eee; text-align:center;">
-      
-      <h2 style="color:#3B82F6;">Thank You, ${name}!</h2>
-      
-      <p style="color:#555; margin:20px 0;">
-        We’ve received your message and our team will get back to you within 24 hours.
-      </p>
+        <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">
+          <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; border:1px solid #eee; text-align:center;">
+            
+            <h2 style="color:#3B82F6;">Thank You, ${name}!</h2>
+            
+            <p style="color:#555; margin:20px 0;">
+              We’ve received your message and our team will get back to you within 24 hours.
+            </p>
 
-      <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin:20px 0;">
-        <p style="margin:0;"><strong>Your Message:</strong></p>
-        <p style="margin-top:10px;">${message}</p>
-      </div>
+            <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin:20px 0;">
+              <p style="margin:0;"><strong>Your Message:</strong></p>
+              <p style="margin-top:10px;">${message}</p>
+            </div>
 
-      <a href="https://www.instagram.com/_sociallift.co?igsh=Ym9wZXl2NTd1ZHYz"
-         style="display:inline-block; margin-top:20px; background:#3B82F6; color:white; padding:12px 20px; border-radius:8px; text-decoration:none;">
-        Follow us on Instagram
-      </a>
+            <a href="https://www.instagram.com/_sociallift.co?igsh=Ym9wZXl2NTd1ZHYz"
+               style="display:inline-block; margin-top:20px; background:#3B82F6; color:white; padding:12px 20px; border-radius:8px; text-decoration:none;">
+              Follow us on Instagram
+            </a>
 
-      <p style="margin-top:30px; font-size:12px; color:#888;">
-        SocialLift Team • Digital Marketing Agency
-      </p>
+            <p style="margin-top:30px; font-size:12px; color:#888;">
+              SocialLift Team • Digital Marketing Agency
+            </p>
 
-    </div>
-  </div>
-  `,
+          </div>
+        </div>
+      `,
     });
-    console.log("✅ Email sent successfully");
+
+    console.log("✅ Email sent via Resend");
 
     res.status(201).json({
       success: true,
