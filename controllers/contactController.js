@@ -40,7 +40,7 @@ exports.submitContact = async (req, res) => {
 
     // ================= SEND EMAIL TO YOU =================
     await resend.emails.send({
-      from: "SocialLift <onboarding@resend.dev>", // default sender
+      from: "SocialLift <noreply@sociallift.co.in>", // default sender
       to: process.env.EMAIL_USER, // your email
       subject: "📩 New Contact Form Submission",
       html: `
@@ -71,7 +71,7 @@ exports.submitContact = async (req, res) => {
 
     // ================= AUTO REPLY TO USER =================
     await resend.emails.send({
-      from: "SocialLift <onboarding@resend.dev>",
+      from: "SocialLift <noreply@sociallift.co.in>",
       to: email,
       subject: "We received your message - SocialLift",
       html: `
