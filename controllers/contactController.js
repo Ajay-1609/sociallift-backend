@@ -3,64 +3,64 @@ const nodemailer = require("nodemailer");
 const validator = require("validator");
 
 exports.submitContact = async (req, res) => {
-    try {
-        let { name, email, phone, message } = req.body;
+  try {
+    let { name, email, phone, message } = req.body;
 
-        // ================= TRIM =================
-        name = name?.trim();
-        email = email?.trim();
-        phone = phone?.trim();
-        message = message?.trim();
+    // ================= TRIM =================
+    name = name?.trim();
+    email = email?.trim();
+    phone = phone?.trim();
+    message = message?.trim();
 
-        // ================= VALIDATIONS =================
-        if (!name || !email || !phone || !message) {
-            return res.status(400).json({ error: "All fields are required" });
-        }
+    // ================= VALIDATIONS =================
+    if (!name || !email || !phone || !message) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
 
-        if (name.length < 3 || name.length > 50) {
-            return res.status(400).json({ error: "Invalid name length" });
-        }
+    if (name.length < 3 || name.length > 50) {
+      return res.status(400).json({ error: "Invalid name length" });
+    }
 
-        if (!validator.isEmail(email)) {
-            return res.status(400).json({ error: "Invalid email format" });
-        }
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format" });
+    }
 
-        if (!/^[0-9]{10,15}$/.test(phone)) {
-            return res.status(400).json({ error: "Invalid phone number" });
-        }
+    if (!/^[0-9]{10,15}$/.test(phone)) {
+      return res.status(400).json({ error: "Invalid phone number" });
+    }
 
-        if (message.length < 10 || message.length > 1000) {
-            return res.status(400).json({ error: "Message length invalid" });
-        }
+    if (message.length < 10 || message.length > 1000) {
+      return res.status(400).json({ error: "Message length invalid" });
+    }
 
-        // ================= SAVE TO DB =================
-        await Contact.create({ name, email, phone, message });
+    // ================= SAVE TO DB =================
+    await Contact.create({ name, email, phone, message });
 
-        // ================= DEBUG =================
-        // console.log("EMAIL_USER:", process.env.EMAIL_USER);
-        // console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Missing");
+    // ================= DEBUG =================
+    // console.log("EMAIL_USER:", process.env.EMAIL_USER);
+    // console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Missing");
 
-        // ================= EMAIL SETUP =================
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
+    // ================= EMAIL SETUP =================
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // IMPORTANT (SSL)
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
-        // ✅ VERIFY SMTP (IMPORTANT)
-        await transporter.verify();
-        console.log("✅ SMTP Connected");
+    // ✅ VERIFY SMTP (IMPORTANT)
+    await transporter.verify();
+    console.log("✅ SMTP Connected");
 
-        // ================= SEND EMAIL =================
-        await transporter.sendMail({
-            from: `"SocialLift" <${process.env.EMAIL_USER}>`,
-            to: process.env.EMAIL_USER,
-            subject: "📩 New Contact Form Submission",
-            html: `
+    // ================= SEND EMAIL =================
+    await transporter.sendMail({
+      from: `"SocialLift" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      subject: "📩 New Contact Form Submission",
+      html: `
   <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">
     <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; border:1px solid #eee;">
       
@@ -84,12 +84,12 @@ exports.submitContact = async (req, res) => {
     </div>
   </div>
   `,
-        });
-        await transporter.sendMail({
-            from: `"SocialLift" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: "We received your message - SocialLift",
-            html: `
+    });
+    await transporter.sendMail({
+      from: `"SocialLift" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "We received your message - SocialLift",
+      html: `
   <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">
     <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; border:1px solid #eee; text-align:center;">
       
@@ -116,16 +116,16 @@ exports.submitContact = async (req, res) => {
     </div>
   </div>
   `,
-        });
-        console.log("✅ Email sent successfully");
+    });
+    console.log("✅ Email sent successfully");
 
-        res.status(201).json({
-            success: true,
-            message: "Message sent successfully",
-        });
+    res.status(201).json({
+      success: true,
+      message: "Message sent successfully",
+    });
 
-    } catch (error) {
-        console.error("❌ Error:", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
+  } catch (error) {
+    console.error("❌ Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
